@@ -1,0 +1,99 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: black;
+    overflow: hidden;
+    color: white;
+    text-align: center;
+}
+
+/* Animated background */
+.bg-animated {
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 20% 20%, #1a1a1a, #000);
+    animation: bgMove 15s infinite alternate;
+    z-index: -1;
+}
+
+@keyframes bgMove {
+    0% { transform: translate(-10%, -10%); }
+    100% { transform: translate(10%, 10%); }
+}
+
+h1 {
+    margin-top: 15px;
+    font-size: 42px;
+    background: linear-gradient(90deg, gold, orange, red);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+}
+
+#scoreBoard {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+#board {
+    width: 480px;
+    height: 480px;
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 40px rgba(255,215,0,0.4);
+}
+
+/* Tiles */
+.tile {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+/* Hover glow */
+.tile:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px white;
+}
+
+/* Mythic neon colors */
+.m13 { background: linear-gradient(45deg,#ff0000,#ff6a6a); box-shadow:0 0 10px #ff0000;}
+.krig { background: linear-gradient(45deg,#0066ff,#66a3ff); box-shadow:0 0 10px #0066ff;}
+.fennec { background: linear-gradient(45deg,#00cc66,#66ffb3); box-shadow:0 0 10px #00cc66;}
+.holger { background: linear-gradient(45deg,#a64dff,#d9b3ff); box-shadow:0 0 10px #a64dff;}
+.rytec { background: linear-gradient(45deg,#ff9900,#ffd699); box-shadow:0 0 10px #ff9900;}
+.switchblade { background: linear-gradient(45deg,#00e6e6,#99ffff); box-shadow:0 0 10px #00e6e6;}
+
+/* Match animation */
+.matched {
+    animation: explode 0.4s forwards;
+}
+
+@keyframes explode {
+    0% { transform: scale(1); opacity:1; }
+    100% { transform: scale(1.8); opacity:0; }
+}
+
+/* Drop animation */
+.fall {
+    animation: fallAnim 0.3s ease-in;
+}
+
+@keyframes fallAnim {
+    from { transform: translateY(-60px); }
+    to { transform: translateY(0); }
+}
