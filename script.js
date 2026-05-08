@@ -2,25 +2,68 @@ const width = 8;
 
 const board = document.getElementById("board");
 
-const scoreDisplay = document.getElementById("score");
-const timerDisplay = document.getElementById("timer");
+const scoreDisplay =
+document.getElementById("score");
 
-const gameOverBox = document.getElementById("gameOver");
-const finalScore = document.getElementById("finalScore");
+const timerDisplay =
+document.getElementById("timer");
+
+const highScoreDisplay =
+document.getElementById("highScore");
+
+const gameOverBox =
+document.getElementById("gameOver");
+
+const finalScore =
+document.getElementById("finalScore");
+
+const pauseBtn =
+document.getElementById("pauseBtn");
+
+const countdownScreen =
+document.getElementById("countdownScreen");
+
+const countdownText =
+document.getElementById("countdownText");
+
+const startScreen =
+document.getElementById("startScreen");
+
+/* ========================= */
 
 let score = 0;
-let timeLeft = 5;
+let timeLeft = 16;
+
+let gameStarted = false;
+let paused = false;
+
+let countdown;
+let gameLoop;
+
+/* ========================= */
 
 const weapons = [
+
     {name:"M13", class:"m13"},
     {name:"Krig", class:"krig"},
     {name:"Fennec", class:"fennec"},
     {name:"Holger", class:"holger"},
     {name:"Rytec", class:"rytec"},
     {name:"Switchblade", class:"switchblade"}
+
 ];
 
 let squares = [];
+
+/* ========================= */
+/* HIGH SCORE */
+/* ========================= */
+
+let highScore =
+localStorage.getItem("mythicHighScore") || 0;
+
+highScoreDisplay.innerText =
+highScore;
 
 /* ========================= */
 /* CREATE BOARD */
@@ -28,84 +71,106 @@ let squares = [];
 
 function createBoard(){
 
-    for(let i = 0; i < width * width; i++){
+    board.innerHTML = "";
 
-        const square = document.createElement("div");
+    squares = [];
 
-        square.setAttribute("id", i);
+    for(let i=0;i<64;i++){
+
+        const square =
+        document.createElement("div");
+
+        square.setAttribute("id",i);
 
         square.classList.add("tile");
 
         let randomWeapon =
-            weapons[Math.floor(Math.random() * weapons.length)];
+        weapons[Math.floor(
+            Math.random()*weapons.length
+        )];
 
-        square.classList.add(randomWeapon.class);
+        square.classList.add(
+            randomWeapon.class
+        );
 
-        square.innerText = randomWeapon.name;
+        square.innerText =
+        randomWeapon.name;
 
         board.appendChild(square);
 
         squares.push(square);
     }
+
+    initSwipe();
 }
 
 createBoard();
 
 /* ========================= */
-/* SWIPE SYSTEM */
+/* SWIPE */
 /* ========================= */
 
 let startX = 0;
 let startY = 0;
-
 let startSquare = null;
 
-squares.forEach(square => {
+function initSwipe(){
 
-    /* MOBILE */
+    squares.forEach(square=>{
 
-    square.addEventListener(
-        "touchstart",
-        handleTouchStart,
-        {passive:true}
-    );
+        square.addEventListener(
+            "touchstart",
+            handleTouchStart,
+            {passive:true}
+        );
 
-    square.addEventListener(
-        "touchend",
-        handleTouchEnd
-    );
+        square.addEventListener(
+            "touchend",
+            handleTouchEnd
+        );
 
-    /* PC */
+        square.addEventListener(
+            "mousedown",
+            handleMouseStart
+        );
 
-    square.addEventListener(
-        "mousedown",
-        handleMouseStart
-    );
+        square.addEventListener(
+            "mouseup",
+            handleMouseEnd
+        );
 
-    square.addEventListener(
-        "mouseup",
-        handleMouseEnd
-    );
-
-});
+    });
+}
 
 function handleTouchStart(e){
 
+    if(paused || !gameStarted) return;
+
     startSquare = e.target;
 
-    startX = e.changedTouches[0].clientX;
-    startY = e.changedTouches[0].clientY;
+    startX =
+    e.changedTouches[0].clientX;
+
+    startY =
+    e.changedTouches[0].clientY;
 }
 
 function handleTouchEnd(e){
 
-    let endX = e.changedTouches[0].clientX;
-    let endY = e.changedTouches[0].clientY;
+    if(paused || !gameStarted) return;
+
+    let endX =
+    e.changedTouches[0].clientX;
+
+    let endY =
+    e.changedTouches[0].clientY;
 
     swipeMove(endX,endY);
 }
 
 function handleMouseStart(e){
+
+    if(paused || !gameStarted) return;
 
     startSquare = e.target;
 
@@ -114,6 +179,8 @@ function handleMouseStart(e){
 }
 
 function handleMouseEnd(e){
+
+    if(paused || !gameStarted) return;
 
     let endX = e.clientX;
     let endY = e.clientY;
@@ -134,9 +201,8 @@ function swipeMove(endX,endY){
 
     let direction = null;
 
-    /* HORIZONTAL */
-
-    if(Math.abs(diffX) > Math.abs(diffY)){
+    if(Math.abs(diffX) >
+       Math.abs(diffY)){
 
         if(diffX > 30){
 
@@ -148,8 +214,6 @@ function swipeMove(endX,endY){
             direction = -1;
         }
     }
-
-    /* VERTICAL */
 
     else{
 
@@ -167,43 +231,31 @@ function swipeMove(endX,endY){
     if(direction === null) return;
 
     let startId =
-        parseInt(startSquare.id);
+    parseInt(startSquare.id);
 
     let targetId =
-        startId + direction;
+    startId + direction;
 
-    /* INVALID */
+    if(targetId < 0 ||
+       targetId >= 64){
 
-    if(targetId < 0 || targetId >= 64){
-
-        startSquare = null;
         return;
     }
 
-    /* PREVENT WRAP */
+    if(direction === 1 &&
+       startId % width === 7){
 
-    if(
-        direction === 1 &&
-        startId % width === width - 1
-    ){
         return;
     }
 
-    if(
-        direction === -1 &&
-        startId % width === 0
-    ){
+    if(direction === -1 &&
+       startId % width === 0){
+
         return;
     }
 
     let targetSquare =
-        squares[targetId];
-
-    if(!targetSquare){
-
-        startSquare = null;
-        return;
-    }
+    squares[targetId];
 
     swap(startSquare,targetSquare);
 
@@ -211,7 +263,10 @@ function swipeMove(endX,endY){
 
         setTimeout(()=>{
 
-            swap(startSquare,targetSquare);
+            swap(
+                startSquare,
+                targetSquare
+            );
 
         },150);
     }
@@ -236,51 +291,53 @@ function swap(a,b){
 }
 
 /* ========================= */
-/* MATCH CHECK */
+/* MATCH */
 /* ========================= */
 
 function checkAnyMatch(){
 
     let found = false;
 
-    /* ROWS */
-
-    for(let i = 0; i < 61; i++){
+    for(let i=0;i<61;i++){
 
         let row6 =
-            [i,i+1,i+2,i+3,i+4,i+5];
+        [i,i+1,i+2,i+3,i+4,i+5];
 
         let row5 =
-            [i,i+1,i+2,i+3,i+4];
+        [i,i+1,i+2,i+3,i+4];
 
         let row4 =
-            [i,i+1,i+2,i+3];
+        [i,i+1,i+2,i+3];
 
         let row3 =
-            [i,i+1,i+2];
+        [i,i+1,i+2];
 
-        if(i % 8 <= 2 && isMatch(row6)){
+        if(i%8<=2 &&
+           isMatch(row6)){
 
             rocketExplosion(row6);
 
             found = true;
         }
 
-        else if(i % 8 <= 3 && isMatch(row5)){
+        else if(i%8<=3 &&
+                isMatch(row5)){
 
             rocketExplosion(row5);
 
             found = true;
         }
 
-        else if(i % 8 <= 4 && isMatch(row4)){
+        else if(i%8<=4 &&
+                isMatch(row4)){
 
             bombExplosion(row4);
 
             found = true;
         }
 
-        else if(i % 8 <= 5 && isMatch(row3)){
+        else if(i%8<=5 &&
+                isMatch(row3)){
 
             destroy(row3);
 
@@ -288,21 +345,19 @@ function checkAnyMatch(){
         }
     }
 
-    /* COLUMNS */
-
-    for(let i = 0; i < 40; i++){
+    for(let i=0;i<40;i++){
 
         let col6 =
-            [i,i+8,i+16,i+24,i+32,i+40];
+        [i,i+8,i+16,i+24,i+32,i+40];
 
         let col5 =
-            [i,i+8,i+16,i+24,i+32];
+        [i,i+8,i+16,i+24,i+32];
 
         let col4 =
-            [i,i+8,i+16,i+24];
+        [i,i+8,i+16,i+24];
 
         let col3 =
-            [i,i+8,i+16];
+        [i,i+8,i+16];
 
         if(isMatch(col6)){
 
@@ -336,13 +391,9 @@ function checkAnyMatch(){
     return found;
 }
 
-/* ========================= */
-/* IS MATCH */
-/* ========================= */
-
 function isMatch(arr){
 
-    return arr.every(index =>
+    return arr.every(index=>
 
         squares[index] &&
 
@@ -359,16 +410,20 @@ function isMatch(arr){
 
 function destroy(arr){
 
-    arr.forEach(index => {
+    arr.forEach(index=>{
 
         if(!squares[index]) return;
 
-        squares[index].classList.add("explode");
+        squares[index]
+        .classList.add("explode");
 
         setTimeout(()=>{
 
-            squares[index].className = "tile";
-            squares[index].innerText = "";
+            squares[index]
+            .className = "tile";
+
+            squares[index]
+            .innerText = "";
 
         },220);
     });
@@ -384,36 +439,41 @@ function bombExplosion(arr){
 
     let targets = [];
 
-    arr.forEach(center => {
+    arr.forEach(center=>{
 
         targets.push(
             center,
-            center - 1,
-            center + 1,
-            center - 8,
-            center + 8,
-            center - 9,
-            center - 7,
-            center + 7,
-            center + 9
+            center-1,
+            center+1,
+            center-8,
+            center+8,
+            center-9,
+            center-7,
+            center+7,
+            center+9
         );
     });
 
-    targets = [...new Set(targets)];
+    targets =
+    [...new Set(targets)];
 
-    targets.forEach(index => {
+    targets.forEach(index=>{
 
         if(
             squares[index] &&
             squares[index].innerText !== ""
         ){
 
-            squares[index].classList.add("explode");
+            squares[index]
+            .classList.add("explode");
 
             setTimeout(()=>{
 
-                squares[index].className = "tile";
-                squares[index].innerText = "";
+                squares[index]
+                .className = "tile";
+
+                squares[index]
+                .innerText = "";
 
             },220);
         }
@@ -430,33 +490,39 @@ function rocketExplosion(arr){
 
     let targets = [];
 
-    /* RANDOM BLASTS */
+    for(let i=0;i<18;i++){
 
-    for(let i = 0; i < 18; i++){
-
-        let random =
-            Math.floor(Math.random() * 64);
-
-        targets.push(random);
+        targets.push(
+            Math.floor(
+                Math.random()*64
+            )
+        );
     }
 
-    arr.forEach(index=>targets.push(index));
+    arr.forEach(index=>
+        targets.push(index)
+    );
 
-    targets = [...new Set(targets)];
+    targets =
+    [...new Set(targets)];
 
-    targets.forEach(index => {
+    targets.forEach(index=>{
 
         if(
             squares[index] &&
             squares[index].innerText !== ""
         ){
 
-            squares[index].classList.add("explode");
+            squares[index]
+            .classList.add("explode");
 
             setTimeout(()=>{
 
-                squares[index].className = "tile";
-                squares[index].innerText = "";
+                squares[index]
+                .className = "tile";
+
+                squares[index]
+                .innerText = "";
 
             },220);
         }
@@ -473,9 +539,8 @@ function addScore(blocks){
 
     score += blocks * 10;
 
-    scoreDisplay.innerText = score;
-
-    /* TIME BONUS */
+    scoreDisplay.innerText =
+    score;
 
     if(blocks === 3){
 
@@ -492,7 +557,23 @@ function addScore(blocks){
         timeLeft += 3;
     }
 
-    timerDisplay.innerText = timeLeft;
+    timerDisplay.innerText =
+    timeLeft;
+
+    /* HIGH SCORE */
+
+    if(score > highScore){
+
+        highScore = score;
+
+        localStorage.setItem(
+            "mythicHighScore",
+            highScore
+        );
+
+        highScoreDisplay.innerText =
+        highScore;
+    }
 }
 
 /* ========================= */
@@ -501,92 +582,159 @@ function addScore(blocks){
 
 function moveDown(){
 
-    for(let i = 55; i >= 0; i--){
+    for(let i=55;i>=0;i--){
 
         if(
-            squares[i + 8].innerText === ""
+            squares[i+8].innerText === ""
         ){
 
-            squares[i + 8].className =
-                squares[i].className;
+            squares[i+8].className =
+            squares[i].className;
 
-            squares[i + 8].innerText =
-                squares[i].innerText;
+            squares[i+8].innerText =
+            squares[i].innerText;
 
-            /* FALL ANIMATION */
+            squares[i+8]
+            .classList.remove("fall");
 
-            squares[i + 8]
-                .classList.remove("fall");
+            void squares[i+8]
+            .offsetWidth;
 
-            void squares[i + 8].offsetWidth;
+            squares[i+8]
+            .classList.add("fall");
 
-            squares[i + 8]
-                .classList.add("fall");
-
-            squares[i].className = "tile";
+            squares[i].className =
+            "tile";
 
             squares[i].innerText = "";
         }
     }
 
-    /* REFILL */
+    for(let i=0;i<8;i++){
 
-    for(let i = 0; i < 8; i++){
-
-        if(squares[i].innerText === ""){
+        if(squares[i].innerText===""){
 
             let randomWeapon =
-                weapons[
-                    Math.floor(
-                        Math.random() *
-                        weapons.length
-                    )
-                ];
+            weapons[
+                Math.floor(
+                    Math.random()*
+                    weapons.length
+                )
+            ];
 
             squares[i].className =
-                "tile " + randomWeapon.class;
+            "tile " +
+            randomWeapon.class;
 
             squares[i].innerText =
-                randomWeapon.name;
+            randomWeapon.name;
 
             squares[i]
-                .classList.add("fall");
+            .classList.add("fall");
         }
     }
 }
 
 /* ========================= */
-/* TIMER */
+/* START GAME */
 /* ========================= */
 
-const countdown = setInterval(()=>{
+function startCountdown(){
 
-    timeLeft--;
+    startScreen.style.display =
+    "none";
 
-    timerDisplay.innerText = timeLeft;
+    countdownScreen.style.display =
+    "flex";
 
-    if(timeLeft <= 0){
+    let count = 3;
 
-        clearInterval(countdown);
+    countdownText.innerText = count;
 
-        clearInterval(gameLoop);
+    let countdownInterval =
+    setInterval(()=>{
 
-        gameOver();
-    }
+        count--;
 
-},1000);
+        if(count <= 0){
+
+            clearInterval(
+                countdownInterval
+            );
+
+            countdownScreen
+            .style.display = "none";
+
+            startGame();
+        }
+
+        else{
+
+            countdownText.innerText =
+            count;
+        }
+
+    },1000);
+}
 
 /* ========================= */
-/* GAME LOOP */
+/* START */
 /* ========================= */
 
-const gameLoop = setInterval(()=>{
+function startGame(){
 
-    checkAnyMatch();
+    gameStarted = true;
 
-    moveDown();
+    countdown = setInterval(()=>{
 
-},180);
+        if(paused) return;
+
+        timeLeft--;
+
+        timerDisplay.innerText =
+        timeLeft;
+
+        if(timeLeft <= 0){
+
+            clearInterval(
+                countdown
+            );
+
+            clearInterval(
+                gameLoop
+            );
+
+            gameOver();
+        }
+
+    },1000);
+
+    gameLoop = setInterval(()=>{
+
+        if(paused) return;
+
+        checkAnyMatch();
+
+        moveDown();
+
+    },180);
+}
+
+/* ========================= */
+/* PAUSE */
+/* ========================= */
+
+pauseBtn.addEventListener(
+    "click",
+    ()=>{
+
+    paused = !paused;
+
+    pauseBtn.innerText =
+    paused ?
+    "▶ RESUME" :
+    "⏸ PAUSE";
+});
 
 /* ========================= */
 /* GAME OVER */
@@ -594,9 +742,11 @@ const gameLoop = setInterval(()=>{
 
 function gameOver(){
 
-    finalScore.innerText = score;
+    finalScore.innerText =
+    score;
 
-    gameOverBox.style.display = "flex";
+    gameOverBox.style.display =
+    "flex";
 }
 
 /* ========================= */
@@ -604,6 +754,15 @@ function gameOver(){
 /* ========================= */
 
 function restartGame(){
+
+    location.reload();
+}
+
+/* ========================= */
+/* EXIT */
+/* ========================= */
+
+function exitGame(){
 
     location.reload();
 }

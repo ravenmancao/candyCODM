@@ -15,7 +15,6 @@ url("jaja.jpg");
 background-size:cover;
 background-position:center;
 background-repeat:no-repeat;
-background-attachment:fixed;
 
     display:flex;
     flex-direction:column;
@@ -27,6 +26,7 @@ background-attachment:fixed;
 /* ========================= */
 /* SAKURA PARTICLES */
 /* ========================= */
+
 
 body::before,
 body::after{
@@ -543,5 +543,74 @@ button:hover{
     button{
         padding:12px 24px;
         font-size:16px;
+    }
+}
+
+/* ========================= */
+/* CONTROLS */
+/* ========================= */
+
+.controls{
+    display:flex;
+    gap:15px;
+    margin-bottom:15px;
+}
+
+/* ========================= */
+/* START SCREEN */
+/* ========================= */
+
+#startScreen,
+#countdownScreen{
+    position:fixed;
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+
+    background:
+    rgba(255,192,203,.18);
+
+    backdrop-filter:blur(12px);
+
+    z-index:9999;
+}
+
+#startScreen h2{
+    font-size:64px;
+
+    margin-bottom:30px;
+
+    text-shadow:
+    0 0 20px #ff69b4,
+    0 0 40px white;
+}
+
+#countdownScreen{
+    display:none;
+}
+
+#countdownText{
+    font-size:120px;
+    font-weight:900;
+
+    color:white;
+
+    animation:
+    countdownPop .8s infinite;
+}
+
+@keyframes countdownPop{
+
+    0%{
+        transform:scale(.5);
+        opacity:.3;
+    }
+
+    100%{
+        transform:scale(1.2);
+        opacity:1;
     }
 }
