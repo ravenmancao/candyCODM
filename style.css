@@ -10,7 +10,7 @@ body{
     font-family:'Segoe UI',sans-serif;
     background:
 linear-gradient(rgba(255,192,203,.35), rgba(255,255,255,.35)),
-url("bg.jpg");
+url("raven.jpg");
 
 background-size:cover;
 background-position:center;
@@ -66,18 +66,18 @@ h1{
 
     background:linear-gradient(
         90deg,
-        #484848,
-        #ffe0f0,
-        #f848a0,
-        #595959
+        #4a41ff,
+        #9696ff,
+        #ff83c1,
+        #ff4da9
     );
 
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 
     text-shadow:
-        0 0 15px rgba(255,255,255,.7),
-        0 0 30px rgba(255,105,180,.8);
+        0 0 15px rgba(255, 138, 218, 0.7),
+        0 0 30px rgba(255, 95, 191, 0.8);
 
     animation: glowTitle 2s infinite alternate;
 }
