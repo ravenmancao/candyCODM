@@ -1,4 +1,5 @@
 const width = 8;
+
 const board = document.getElementById("board");
 
 const scoreDisplay = document.getElementById("score");
@@ -8,7 +9,7 @@ const gameOverBox = document.getElementById("gameOver");
 const finalScore = document.getElementById("finalScore");
 
 let score = 0;
-let timeLeft = 15;
+let timeLeft = 5;
 
 const weapons = [
     {name:"M13", class:"m13"},
@@ -21,24 +22,25 @@ const weapons = [
 
 let squares = [];
 
-let dragged = null;
-let replaced = null;
-
+/* ========================= */
 /* CREATE BOARD */
+/* ========================= */
 
 function createBoard(){
 
-    for(let i=0;i<width*width;i++){
+    for(let i = 0; i < width * width; i++){
 
         const square = document.createElement("div");
 
-        square.setAttribute("draggable",true);
-        square.setAttribute("id",i);
+        square.setAttribute("id", i);
+
+        square.classList.add("tile");
 
         let randomWeapon =
-            weapons[Math.floor(Math.random()*weapons.length)];
+            weapons[Math.floor(Math.random() * weapons.length)];
 
-        square.classList.add("tile",randomWeapon.class);
+        square.classList.add(randomWeapon.class);
+
         square.innerText = randomWeapon.name;
 
         board.appendChild(square);
@@ -49,29 +51,177 @@ function createBoard(){
 
 createBoard();
 
-/* DRAG */
+/* ========================= */
+/* SWIPE SYSTEM */
+/* ========================= */
 
-squares.forEach(square =>
-    square.addEventListener("dragstart",()=>{
-        dragged=square;
-    })
-);
+let startX = 0;
+let startY = 0;
 
-squares.forEach(square =>
-    square.addEventListener("dragover",e=>e.preventDefault())
-);
+let startSquare = null;
 
-squares.forEach(square =>
-    square.addEventListener("drop",()=>{
-        replaced=square;
-    })
-);
+squares.forEach(square => {
 
-squares.forEach(square =>
-    square.addEventListener("dragend",dragEnd)
-);
+    /* MOBILE */
 
+    square.addEventListener(
+        "touchstart",
+        handleTouchStart,
+        {passive:true}
+    );
+
+    square.addEventListener(
+        "touchend",
+        handleTouchEnd
+    );
+
+    /* PC */
+
+    square.addEventListener(
+        "mousedown",
+        handleMouseStart
+    );
+
+    square.addEventListener(
+        "mouseup",
+        handleMouseEnd
+    );
+
+});
+
+function handleTouchStart(e){
+
+    startSquare = e.target;
+
+    startX = e.changedTouches[0].clientX;
+    startY = e.changedTouches[0].clientY;
+}
+
+function handleTouchEnd(e){
+
+    let endX = e.changedTouches[0].clientX;
+    let endY = e.changedTouches[0].clientY;
+
+    swipeMove(endX,endY);
+}
+
+function handleMouseStart(e){
+
+    startSquare = e.target;
+
+    startX = e.clientX;
+    startY = e.clientY;
+}
+
+function handleMouseEnd(e){
+
+    let endX = e.clientX;
+    let endY = e.clientY;
+
+    swipeMove(endX,endY);
+}
+
+/* ========================= */
+/* SWIPE MOVE */
+/* ========================= */
+
+function swipeMove(endX,endY){
+
+    if(!startSquare) return;
+
+    let diffX = endX - startX;
+    let diffY = endY - startY;
+
+    let direction = null;
+
+    /* HORIZONTAL */
+
+    if(Math.abs(diffX) > Math.abs(diffY)){
+
+        if(diffX > 30){
+
+            direction = 1;
+        }
+
+        else if(diffX < -30){
+
+            direction = -1;
+        }
+    }
+
+    /* VERTICAL */
+
+    else{
+
+        if(diffY > 30){
+
+            direction = width;
+        }
+
+        else if(diffY < -30){
+
+            direction = -width;
+        }
+    }
+
+    if(direction === null) return;
+
+    let startId =
+        parseInt(startSquare.id);
+
+    let targetId =
+        startId + direction;
+
+    /* INVALID */
+
+    if(targetId < 0 || targetId >= 64){
+
+        startSquare = null;
+        return;
+    }
+
+    /* PREVENT WRAP */
+
+    if(
+        direction === 1 &&
+        startId % width === width - 1
+    ){
+        return;
+    }
+
+    if(
+        direction === -1 &&
+        startId % width === 0
+    ){
+        return;
+    }
+
+    let targetSquare =
+        squares[targetId];
+
+    if(!targetSquare){
+
+        startSquare = null;
+        return;
+    }
+
+    swap(startSquare,targetSquare);
+
+    if(!checkAnyMatch()){
+
+        setTimeout(()=>{
+
+            swap(startSquare,targetSquare);
+
+        },150);
+    }
+
+    startSquare = null;
+}
+
+/* ========================= */
 /* SWAP */
+/* ========================= */
 
 function swap(a,b){
 
@@ -85,198 +235,239 @@ function swap(a,b){
     b.innerText = tempText;
 }
 
-/* VALIDATE MOVE */
-
-function dragEnd(){
-
-    if(!dragged || !replaced) return;
-
-    let validMoves = [
-        parseInt(dragged.id)-1,
-        parseInt(dragged.id)+1,
-        parseInt(dragged.id)-width,
-        parseInt(dragged.id)+width
-    ];
-
-    if(validMoves.includes(parseInt(replaced.id))){
-
-        swap(dragged,replaced);
-
-        if(!checkAnyMatch()){
-            swap(dragged,replaced);
-        }
-    }
-
-    dragged=null;
-    replaced=null;
-}
-
-/* CHECK MATCHES */
+/* ========================= */
+/* MATCH CHECK */
+/* ========================= */
 
 function checkAnyMatch(){
 
     let found = false;
 
-    // ROWS
+    /* ROWS */
 
-    for(let i=0;i<61;i++){
+    for(let i = 0; i < 61; i++){
 
-        let row6=[i,i+1,i+2,i+3,i+4,i+5];
-        let row5=[i,i+1,i+2,i+3,i+4];
-        let row4=[i,i+1,i+2,i+3];
-        let row3=[i,i+1,i+2];
+        let row6 =
+            [i,i+1,i+2,i+3,i+4,i+5];
 
-        if(i%8<=2 && isMatch(row6)){
-            rocketExplosion(i);
-            found=true;
+        let row5 =
+            [i,i+1,i+2,i+3,i+4];
+
+        let row4 =
+            [i,i+1,i+2,i+3];
+
+        let row3 =
+            [i,i+1,i+2];
+
+        if(i % 8 <= 2 && isMatch(row6)){
+
+            rocketExplosion(row6);
+
+            found = true;
         }
 
-        else if(i%8<=3 && isMatch(row5)){
-            rocketExplosion(i);
-            found=true;
+        else if(i % 8 <= 3 && isMatch(row5)){
+
+            rocketExplosion(row5);
+
+            found = true;
         }
 
-        else if(i%8<=4 && isMatch(row4)){
-            bombExplosion(i);
-            found=true;
+        else if(i % 8 <= 4 && isMatch(row4)){
+
+            bombExplosion(row4);
+
+            found = true;
         }
 
-        else if(i%8<=5 && isMatch(row3)){
+        else if(i % 8 <= 5 && isMatch(row3)){
+
             destroy(row3);
-            found=true;
+
+            found = true;
         }
     }
 
-    // COLS
+    /* COLUMNS */
 
-    for(let i=0;i<40;i++){
+    for(let i = 0; i < 40; i++){
 
-        let col6=[i,i+8,i+16,i+24,i+32,i+40];
-        let col5=[i,i+8,i+16,i+24,i+32];
-        let col4=[i,i+8,i+16,i+24];
-        let col3=[i,i+8,i+16];
+        let col6 =
+            [i,i+8,i+16,i+24,i+32,i+40];
+
+        let col5 =
+            [i,i+8,i+16,i+24,i+32];
+
+        let col4 =
+            [i,i+8,i+16,i+24];
+
+        let col3 =
+            [i,i+8,i+16];
 
         if(isMatch(col6)){
-            rocketExplosion(i);
-            found=true;
+
+            rocketExplosion(col6);
+
+            found = true;
         }
 
         else if(isMatch(col5)){
-            rocketExplosion(i);
-            found=true;
+
+            rocketExplosion(col5);
+
+            found = true;
         }
 
         else if(isMatch(col4)){
-            bombExplosion(i);
-            found=true;
+
+            bombExplosion(col4);
+
+            found = true;
         }
 
         else if(isMatch(col3)){
+
             destroy(col3);
-            found=true;
+
+            found = true;
         }
     }
 
     return found;
 }
 
-/* MATCH */
+/* ========================= */
+/* IS MATCH */
+/* ========================= */
 
 function isMatch(arr){
 
     return arr.every(index =>
+
         squares[index] &&
+
         squares[index].innerText !== "" &&
-        squares[index].innerText === squares[arr[0]].innerText
+
+        squares[index].innerText ===
+        squares[arr[0]].innerText
     );
 }
 
+/* ========================= */
 /* DESTROY */
+/* ========================= */
 
 function destroy(arr){
 
-    arr.forEach(index=>{
+    arr.forEach(index => {
+
+        if(!squares[index]) return;
 
         squares[index].classList.add("explode");
 
         setTimeout(()=>{
 
-            squares[index].className="tile";
-            squares[index].innerText="";
+            squares[index].className = "tile";
+            squares[index].innerText = "";
 
-        },200);
+        },220);
     });
 
     addScore(arr.length);
 }
 
+/* ========================= */
 /* BOMB */
+/* ========================= */
 
-function bombExplosion(center){
+function bombExplosion(arr){
 
-    let targets = [
-        center,
-        center-1,
-        center+1,
-        center-8,
-        center+8,
-        center-9,
-        center-7,
-        center+7,
-        center+9
-    ];
+    let targets = [];
 
-    targets.forEach(index=>{
+    arr.forEach(center => {
 
-        if(squares[index]){
+        targets.push(
+            center,
+            center - 1,
+            center + 1,
+            center - 8,
+            center + 8,
+            center - 9,
+            center - 7,
+            center + 7,
+            center + 9
+        );
+    });
+
+    targets = [...new Set(targets)];
+
+    targets.forEach(index => {
+
+        if(
+            squares[index] &&
+            squares[index].innerText !== ""
+        ){
 
             squares[index].classList.add("explode");
 
             setTimeout(()=>{
 
-                squares[index].className="tile";
-                squares[index].innerText="";
+                squares[index].className = "tile";
+                squares[index].innerText = "";
 
-            },200);
+            },220);
         }
     });
 
     addScore(4);
 }
 
+/* ========================= */
 /* ROCKET */
+/* ========================= */
 
-function rocketExplosion(center){
+function rocketExplosion(arr){
 
-    let targets=[];
+    let targets = [];
 
-    for(let i=0;i<15;i++){
+    /* RANDOM BLASTS */
+
+    for(let i = 0; i < 18; i++){
 
         let random =
-            Math.floor(Math.random()*64);
+            Math.floor(Math.random() * 64);
 
         targets.push(random);
     }
 
-    targets.forEach(index=>{
+    arr.forEach(index=>targets.push(index));
 
-        if(squares[index]){
+    targets = [...new Set(targets)];
+
+    targets.forEach(index => {
+
+        if(
+            squares[index] &&
+            squares[index].innerText !== ""
+        ){
 
             squares[index].classList.add("explode");
 
             setTimeout(()=>{
 
-                squares[index].className="tile";
-                squares[index].innerText="";
+                squares[index].className = "tile";
+                squares[index].innerText = "";
 
-            },200);
+            },220);
         }
     });
 
     addScore(6);
 }
 
+/* ========================= */
 /* SCORE */
+/* ========================= */
 
 function addScore(blocks){
 
@@ -284,70 +475,110 @@ function addScore(blocks){
 
     scoreDisplay.innerText = score;
 
-    timeLeft += blocks;
+    /* TIME BONUS */
+
+    if(blocks === 3){
+
+        timeLeft += 1;
+    }
+
+    else if(blocks === 4){
+
+        timeLeft += 2;
+    }
+
+    else if(blocks >= 5){
+
+        timeLeft += 3;
+    }
 
     timerDisplay.innerText = timeLeft;
 }
 
+/* ========================= */
 /* MOVE DOWN */
+/* ========================= */
 
 function moveDown(){
 
-    for(let i=55;i>=0;i--){
+    for(let i = 55; i >= 0; i--){
 
-        if(squares[i+8].innerText===""){
+        if(
+            squares[i + 8].innerText === ""
+        ){
 
-            squares[i+8].className =
-    squares[i].className;
+            squares[i + 8].className =
+                squares[i].className;
 
-squares[i+8].classList.remove("fall");
-
-void squares[i+8].offsetWidth;
-
-squares[i+8].classList.add("fall");
-
-            squares[i+8].innerText =
+            squares[i + 8].innerText =
                 squares[i].innerText;
 
-            squares[i].className="tile";
-            squares[i].innerText="";
+            /* FALL ANIMATION */
+
+            squares[i + 8]
+                .classList.remove("fall");
+
+            void squares[i + 8].offsetWidth;
+
+            squares[i + 8]
+                .classList.add("fall");
+
+            squares[i].className = "tile";
+
+            squares[i].innerText = "";
         }
     }
 
-    for(let i=0;i<8;i++){
+    /* REFILL */
 
-        if(squares[i].innerText===""){
+    for(let i = 0; i < 8; i++){
+
+        if(squares[i].innerText === ""){
 
             let randomWeapon =
-                weapons[Math.floor(Math.random()*weapons.length)];
+                weapons[
+                    Math.floor(
+                        Math.random() *
+                        weapons.length
+                    )
+                ];
 
             squares[i].className =
                 "tile " + randomWeapon.class;
 
             squares[i].innerText =
                 randomWeapon.name;
+
+            squares[i]
+                .classList.add("fall");
         }
     }
 }
 
+/* ========================= */
 /* TIMER */
+/* ========================= */
 
 const countdown = setInterval(()=>{
 
     timeLeft--;
 
-    timerDisplay.innerText=timeLeft;
+    timerDisplay.innerText = timeLeft;
 
-    if(timeLeft<=0){
+    if(timeLeft <= 0){
 
         clearInterval(countdown);
+
+        clearInterval(gameLoop);
 
         gameOver();
     }
 
 },1000);
 
+/* ========================= */
 /* GAME LOOP */
+/* ========================= */
 
 const gameLoop = setInterval(()=>{
 
@@ -355,20 +586,22 @@ const gameLoop = setInterval(()=>{
 
     moveDown();
 
-},200);
+},180);
 
+/* ========================= */
 /* GAME OVER */
+/* ========================= */
 
 function gameOver(){
 
-    clearInterval(gameLoop);
-
     finalScore.innerText = score;
 
-    gameOverBox.style.display="flex";
+    gameOverBox.style.display = "flex";
 }
 
+/* ========================= */
 /* RESTART */
+/* ========================= */
 
 function restartGame(){
 
